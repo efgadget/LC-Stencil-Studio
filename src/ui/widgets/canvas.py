@@ -2,6 +2,7 @@
 LC Stencil Studio
 Canvas Widget
 Sprint 011
+Release 0.6.2
 """
 
 from PySide6.QtWidgets import (
@@ -24,6 +25,9 @@ from core.viewport import Viewport
 from engine.canvas_engine import CanvasEngine
 from engine.image_engine import ImageEngine
 
+from ui.widgets.selection_overlay import SelectionOverlay
+
+
 
 class Canvas(QGraphicsView):
 
@@ -31,9 +35,6 @@ class Canvas(QGraphicsView):
 
         super().__init__()
 
-
-        # Aggiornamento completo del viewport
-        # evita scie durante lo spostamento degli oggetti
 
         self.setViewportUpdateMode(
             QGraphicsView.ViewportUpdateMode.FullViewportUpdate
@@ -46,7 +47,9 @@ class Canvas(QGraphicsView):
         self.viewport_state = Viewport()
 
 
-        self.scene = QGraphicsScene(self)
+        self.scene = QGraphicsScene(
+            self
+        )
 
         self.setScene(
             self.scene
@@ -63,6 +66,13 @@ class Canvas(QGraphicsView):
         )
 
 
+        # Overlay selezione
+        # Non viene aggiunto direttamente alla scena
+        # per evitare cancellazioni Qt C++
+
+        self.selection_overlay = SelectionOverlay()
+
+
         self.setRenderHint(
             QPainter.RenderHint.Antialiasing
         )
@@ -70,7 +80,7 @@ class Canvas(QGraphicsView):
 
         self.setBackgroundBrush(
             QBrush(
-                QColor(70, 70, 70)
+                QColor(70,70,70)
             )
         )
 
@@ -104,7 +114,7 @@ class Canvas(QGraphicsView):
 
 
 
-    def wheelEvent(self, event):
+    def wheelEvent(self,event):
 
         old_zoom = self.viewport_state.zoom
 
@@ -131,12 +141,11 @@ class Canvas(QGraphicsView):
 
 
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self,event):
 
         if event.button() == Qt.MouseButton.MiddleButton:
 
             self._panning = True
-
 
             self._last_pos = event.pos()
 
@@ -156,8 +165,11 @@ class Canvas(QGraphicsView):
         )
 
 
+        self.update_selection()
 
-    def mouseMoveEvent(self, event):
+
+
+    def mouseMoveEvent(self,event):
 
         if self._panning:
 
@@ -196,7 +208,7 @@ class Canvas(QGraphicsView):
 
 
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self,event):
 
         if event.button() == Qt.MouseButton.MiddleButton:
 
@@ -219,6 +231,29 @@ class Canvas(QGraphicsView):
 
 
 
+    def update_selection(self):
+
+        selected = self.scene.selectedItems()
+
+
+        if selected:
+
+            item = selected[0]
+
+
+            self.selection_overlay.set_target(
+                item
+            )
+
+
+        else:
+
+            self.selection_overlay.set_target(
+                None
+            )
+
+
+
     def fit_material(self):
 
         self.resetTransform()
@@ -234,7 +269,7 @@ class Canvas(QGraphicsView):
 
 
 
-    def import_image(self, filename):
+    def import_image(self,filename):
 
         return self.image_engine.load_image(
             filename
