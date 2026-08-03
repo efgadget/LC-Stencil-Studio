@@ -3,27 +3,27 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from ui.windows.main_window import MainWindow
-from engine.project_manager import ProjectManager
+from ui.dialogs.new_project_dialog import NewProjectDialog
 
 
 def main():
 
     print("=" * 40)
     print("LC STENCIL STUDIO")
-    print("Versione 0.3.0")
+    print("Versione 0.4.0")
     print("=" * 40)
 
     app = QApplication(sys.argv)
 
-    manager = ProjectManager()
+    dialog = NewProjectDialog()
 
-    project = manager.new_project(
-        name="Nuovo progetto",
-        material_name="Mylar 300x300"
-    )
+    if dialog.exec() != dialog.DialogCode.Accepted:
+        sys.exit()
 
-    print("Project:", project.name)
-    print("Material:", project.material)
+    project = dialog.get_project()
+
+    print(project.name)
+    print(project.material)
 
     window = MainWindow(project)
 
