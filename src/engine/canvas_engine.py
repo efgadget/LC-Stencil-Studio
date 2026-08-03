@@ -1,33 +1,31 @@
+"""
+LC Stencil Studio
+Canvas Engine
+Versione 0.2.0
+"""
+
 from PySide6.QtWidgets import QGraphicsRectItem
 from PySide6.QtGui import QBrush, QPen
 from PySide6.QtCore import Qt
 
+from engine.grid_engine import GridEngine
+
 
 class CanvasEngine:
-    """
-    Motore grafico del Canvas.
-
-    Non conosce la UI.
-    Non conosce la MainWindow.
-
-    Riceve un Project e disegna la scena.
-    """
 
     def __init__(self, scene):
-
         self.scene = scene
-
+        self.grid = GridEngine(scene)
         self.material_item = None
 
     def clear(self):
-
         self.scene.clear()
-
         self.material_item = None
 
     def draw_project(self, project):
 
         self.clear()
+        self.grid.draw()
 
         if project is None:
             return
@@ -37,24 +35,26 @@ class CanvasEngine:
         width = material.width
         height = material.height
 
-        self.material_item = QGraphicsRectItem(
+        item = QGraphicsRectItem(
             0,
             0,
             width,
             height
         )
 
-        self.material_item.setBrush(
+        item.setBrush(
             QBrush(Qt.GlobalColor.white)
         )
 
-        self.material_item.setPen(
+        item.setPen(
             QPen(Qt.GlobalColor.black, 1)
         )
 
-        self.scene.addItem(self.material_item)
-
-        self.material_item.setPos(
+        item.setPos(
             -width / 2,
             -height / 2
         )
+
+        self.scene.addItem(item)
+
+        self.material_item = item

@@ -1,3 +1,9 @@
+"""
+LC Stencil Studio
+Canvas Widget
+Versione 0.2.0
+"""
+
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene
@@ -14,28 +20,40 @@ from PySide6.QtCore import (
     QPoint
 )
 
+from core.viewport import Viewport
 from engine.canvas_engine import CanvasEngine
 
 
 class Canvas(QGraphicsView):
 
     def __init__(self, project):
+
         super().__init__()
 
         self.project = project
 
+        self.viewport_state = Viewport()
+
         self.scene = QGraphicsScene(self)
+
         self.setScene(self.scene)
 
         self.engine = CanvasEngine(self.scene)
 
-        self.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        self.setBackgroundBrush(
-            QBrush(QColor(80, 80, 80))
+        self.setRenderHint(
+            QPainter.RenderHint.Antialiasing
         )
 
-        self.setSceneRect(-3000, -3000, 6000, 6000)
+        self.setBackgroundBrush(
+            QBrush(QColor(70, 70, 70))
+        )
+
+        self.setSceneRect(
+            -3000,
+            -3000,
+            6000,
+            6000
+        )
 
         self.setTransformationAnchor(
             QGraphicsView.ViewportAnchor.AnchorUnderMouse
@@ -45,29 +63,29 @@ class Canvas(QGraphicsView):
             QGraphicsView.ViewportAnchor.AnchorUnderMouse
         )
 
-        self.zoom_factor = 1.15
-
-        self.engine.draw_project(self.project)
-
-        # Variabili per il PAN
         self._panning = False
         self._last_pos = QPoint()
 
+        self.engine.draw_project(project)
+
     def wheelEvent(self, event):
+
+        old_zoom = self.viewport_state.zoom
 
         if event.angleDelta().y() > 0:
 
-            self.scale(
-                self.zoom_factor,
-                self.zoom_factor
-            )
+            self.viewport_state.zoom_in()
 
         else:
 
-            self.scale(
-                1 / self.zoom_factor,
-                1 / self.zoom_factor
-            )
+            self.viewport_state.zoom_out()
+
+        factor = self.viewport_state.zoom / old_zoom
+
+        self.scale(
+            factor,
+            factor
+        )
 
     def mousePressEvent(self, event):
 
@@ -77,7 +95,9 @@ class Canvas(QGraphicsView):
 
             self._last_pos = event.pos()
 
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            self.setCursor(
+                Qt.CursorShape.ClosedHandCursor
+            )
 
             event.accept()
 
@@ -113,10 +133,23 @@ class Canvas(QGraphicsView):
 
             self._panning = False
 
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.setCursor(
+                Qt.CursorShape.ArrowCursor
+            )
 
             event.accept()
 
             return
 
         super().mouseReleaseEvent(event)
+
+    def fit_material(self):
+
+        self.resetTransform()
+
+        self.viewport_state.reset()
+
+        self.fitInView(
+            self.scene.itemsBoundingRect(),
+            Qt.AspectRatioMode.KeepAspectRatio
+        )
