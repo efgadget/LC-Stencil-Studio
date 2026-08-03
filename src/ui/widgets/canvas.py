@@ -1,7 +1,7 @@
 """
 LC Stencil Studio
 Canvas Widget
-Versione 0.2.0
+Sprint 011
 """
 
 from PySide6.QtWidgets import (
@@ -22,6 +22,7 @@ from PySide6.QtCore import (
 
 from core.viewport import Viewport
 from engine.canvas_engine import CanvasEngine
+from engine.image_engine import ImageEngine
 
 
 class Canvas(QGraphicsView):
@@ -38,7 +39,9 @@ class Canvas(QGraphicsView):
 
         self.setScene(self.scene)
 
-        self.engine = CanvasEngine(self.scene)
+        self.canvas_engine = CanvasEngine(self.scene)
+
+        self.image_engine = ImageEngine(self.scene)
 
         self.setRenderHint(
             QPainter.RenderHint.Antialiasing
@@ -64,9 +67,10 @@ class Canvas(QGraphicsView):
         )
 
         self._panning = False
+
         self._last_pos = QPoint()
 
-        self.engine.draw_project(project)
+        self.canvas_engine.draw_project(project)
 
     def wheelEvent(self, event):
 
@@ -153,3 +157,7 @@ class Canvas(QGraphicsView):
             self.scene.itemsBoundingRect(),
             Qt.AspectRatioMode.KeepAspectRatio
         )
+
+    def import_image(self, filename):
+
+        return self.image_engine.load_image(filename)
