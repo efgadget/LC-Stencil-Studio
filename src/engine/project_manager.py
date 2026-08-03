@@ -1,5 +1,11 @@
-from core.material import Material
+"""
+LC Stencil Studio
+Project Manager
+Versione 0.3.0
+"""
+
 from core.project import Project
+from core.material_library import MaterialLibrary
 
 
 class ProjectManager:
@@ -9,27 +15,34 @@ class ProjectManager:
 
     def __init__(self):
 
+        self.library = MaterialLibrary()
+
         self.current_project = None
 
     def new_project(
+
         self,
+
         name="Nuovo progetto",
-        width=300,
-        height=300,
-        thickness=0.19,
-        material_name="Mylar"
+
+        material_name="Mylar 300x300"
+
     ):
 
-        material = Material(
-            name=material_name,
-            width=width,
-            height=height,
-            thickness=thickness
-        )
+        material = self.library.get(material_name)
+
+        if material is None:
+
+            raise ValueError(
+                f"Materiale '{material_name}' non trovato."
+            )
 
         self.current_project = Project(
+
             name=name,
+
             material=material
+
         )
 
         return self.current_project

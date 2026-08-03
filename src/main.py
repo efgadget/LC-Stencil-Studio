@@ -3,16 +3,15 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from ui.windows.main_window import MainWindow
-
 from engine.project_manager import ProjectManager
 
 
 def main():
 
-    print("===================================")
+    print("=" * 40)
     print("LC STENCIL STUDIO")
-    print("Versione 0.1.0-alpha")
-    print("===================================")
+    print("Versione 0.3.0")
+    print("=" * 40)
 
     app = QApplication(sys.argv)
 
@@ -20,10 +19,7 @@ def main():
 
     project = manager.new_project(
         name="Nuovo progetto",
-        width=300,
-        height=300,
-        thickness=0.19,
-        material_name="Mylar"
+        material_name="Mylar 300x300"
     )
 
     print("Project:", project.name)

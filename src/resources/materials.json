@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Mylar 300x300",
+        "width": 300,
+        "height": 300,
+        "thickness": 0.19
+    },
+    {
+        "name": "Mylar A4",
+        "width": 210,
+        "height": 297,
+        "thickness": 0.19
+    },
+    {
+        "name": "Mylar A3",
+        "width": 297,
+        "height": 420,
+        "thickness": 0.19
+    },
+    {
+        "name": "PVC 300x300",
+        "width": 300,
+        "height": 300,
+        "thickness": 0.50
+    },
+    {
+        "name": "MDF 300x300",
+        "width": 300,
+        "height": 300,
+        "thickness": 3.0
+    }
+]
