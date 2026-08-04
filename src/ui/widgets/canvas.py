@@ -2,7 +2,7 @@
 LC Stencil Studio
 Canvas Widget
 Sprint 011
-Release 0.6.2
+Release 0.6.3 F.3.3
 """
 
 from PySide6.QtWidgets import (
@@ -43,7 +43,6 @@ class Canvas(QGraphicsView):
 
         self.project = project
 
-
         self.viewport_state = Viewport()
 
 
@@ -66,11 +65,10 @@ class Canvas(QGraphicsView):
         )
 
 
-        # Overlay selezione
-        # Non viene aggiunto direttamente alla scena
-        # per evitare cancellazioni Qt C++
+        self.selection_overlay = None
 
-        self.selection_overlay = SelectionOverlay()
+        self.current_selected_item = None
+
 
 
         self.setRenderHint(
@@ -114,30 +112,68 @@ class Canvas(QGraphicsView):
 
 
 
-    def wheelEvent(self,event):
+    def update_selection(self):
 
-        old_zoom = self.viewport_state.zoom
-
-
-        if event.angleDelta().y() > 0:
-
-            self.viewport_state.zoom_in()
-
-        else:
-
-            self.viewport_state.zoom_out()
+        selected = self.scene.selectedItems()
 
 
-        factor = (
-            self.viewport_state.zoom /
-            old_zoom
+        if not selected:
+
+            if self.selection_overlay:
+
+                self.selection_overlay.setVisible(
+                    False
+                )
+
+
+            self.current_selected_item = None
+
+            return
+
+
+
+        item = selected[0]
+
+
+        if item == self.current_selected_item:
+
+            return
+
+
+        self.current_selected_item = item
+
+
+        # elimina vecchio overlay
+
+        if self.selection_overlay:
+
+            self.scene.removeItem(
+                self.selection_overlay
+            )
+
+
+            self.selection_overlay = None
+
+
+
+        # crea overlay figlio dell'immagine
+
+        self.selection_overlay = SelectionOverlay(
+            item
         )
 
 
-        self.scale(
-            factor,
-            factor
+        self.selection_overlay.setParentItem(
+            item
         )
+
+
+        self.selection_overlay.setVisible(
+            True
+        )
+
+
+        self.selection_overlay.update()
 
 
 
@@ -231,33 +267,36 @@ class Canvas(QGraphicsView):
 
 
 
-    def update_selection(self):
+    def wheelEvent(self,event):
 
-        selected = self.scene.selectedItems()
-
-
-        if selected:
-
-            item = selected[0]
+        old_zoom = self.viewport_state.zoom
 
 
-            self.selection_overlay.set_target(
-                item
-            )
+        if event.angleDelta().y() > 0:
 
+            self.viewport_state.zoom_in()
 
         else:
 
-            self.selection_overlay.set_target(
-                None
-            )
+            self.viewport_state.zoom_out()
+
+
+        factor = (
+            self.viewport_state.zoom /
+            old_zoom
+        )
+
+
+        self.scale(
+            factor,
+            factor
+        )
 
 
 
     def fit_material(self):
 
         self.resetTransform()
-
 
         self.viewport_state.reset()
 
