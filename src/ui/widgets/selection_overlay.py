@@ -1,8 +1,8 @@
 """
 LC Stencil Studio
 Selection Overlay
-Release 0.6.4
-Modulo G.1 - CAD Resize
+Release 0.6.5
+Modulo G.2 - CAD Resize 4 Handles
 """
 
 from PySide6.QtWidgets import QGraphicsItem
@@ -16,19 +16,15 @@ class SelectionOverlay(QGraphicsItem):
 
         super().__init__(parent)
 
-
         self.handle_size = 10
-
 
         self.resizing = False
 
         self.resize_handle = None
 
-
         self.start_mouse = QPointF()
 
         self.start_scale = 1.0
-
 
         self.setZValue(1000)
 
@@ -65,7 +61,6 @@ class SelectionOverlay(QGraphicsItem):
         rect = self.parentItem().boundingRect()
 
 
-
         # bordo verde
 
         pen = QPen(
@@ -91,7 +86,7 @@ class SelectionOverlay(QGraphicsItem):
 
 
 
-        # maniglie bianche
+        # maniglie
 
         painter.setPen(
             QPen(
@@ -110,15 +105,11 @@ class SelectionOverlay(QGraphicsItem):
         size = self.handle_size
 
 
-
         for point in [
 
             rect.topLeft(),
-
             rect.topRight(),
-
             rect.bottomLeft(),
-
             rect.bottomRight()
 
         ]:
@@ -134,50 +125,64 @@ class SelectionOverlay(QGraphicsItem):
 
 
 
-    def mousePressEvent(self,event):
-
-        if self.parentItem() is None:
-
-            return
-
+    def get_handle(self, pos):
 
         rect = self.parentItem().boundingRect()
 
 
-        pos = event.pos()
+        handles = {
+
+            "top_left": rect.topLeft(),
+
+            "top_right": rect.topRight(),
+
+            "bottom_left": rect.bottomLeft(),
+
+            "bottom_right": rect.bottomRight()
+
+        }
+
+
+        for name, point in handles.items():
+
+            if (
+
+                abs(pos.x()-point.x()) < 15
+
+                and
+
+                abs(pos.y()-point.y()) < 15
+
+            ):
+
+                return name
+
+
+        return None
 
 
 
-        # Per ora attiviamo solo basso destra
+    def mousePressEvent(self,event):
 
-        if (
+        handle = self.get_handle(
+            event.pos()
+        )
 
-            pos.x() > rect.right()-20
 
-            and
-
-            pos.y() > rect.bottom()-20
-
-        ):
-
+        if handle:
 
             self.resizing = True
 
-
-            self.resize_handle = "bottom_right"
-
+            self.resize_handle = handle
 
             self.start_mouse = event.scenePos()
-
 
             self.start_scale = self.parentItem().scale()
 
 
             event.accept()
 
-
             return
-
 
 
         event.ignore()
@@ -191,7 +196,6 @@ class SelectionOverlay(QGraphicsItem):
             return
 
 
-
         delta = (
 
             event.scenePos()
@@ -203,16 +207,31 @@ class SelectionOverlay(QGraphicsItem):
         )
 
 
+        factor = self.start_scale
 
-        factor = (
 
-            self.start_scale
 
-            +
+        if self.resize_handle in (
 
-            delta.x() / 300
+            "bottom_right",
 
-        )
+            "top_right"
+
+        ):
+
+            factor += delta.x() / 300
+
+
+
+        elif self.resize_handle in (
+
+            "bottom_left",
+
+            "top_left"
+
+        ):
+
+            factor -= delta.x() / 300
 
 
 
@@ -228,7 +247,6 @@ class SelectionOverlay(QGraphicsItem):
 
 
         self.update()
-
 
 
         event.accept()
