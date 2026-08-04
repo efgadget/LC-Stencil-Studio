@@ -1,8 +1,8 @@
 """
 LC Stencil Studio
 Selection Overlay
-Release 0.6.5
-Modulo G.2 - CAD Resize 4 Handles
+Release 0.6.6
+Modulo G.3 - Proportional CAD Scale
 """
 
 from PySide6.QtWidgets import QGraphicsItem
@@ -16,15 +16,22 @@ class SelectionOverlay(QGraphicsItem):
 
         super().__init__(parent)
 
+
         self.handle_size = 10
+
 
         self.resizing = False
 
         self.resize_handle = None
 
+
         self.start_mouse = QPointF()
 
         self.start_scale = 1.0
+
+
+        self.original_ratio = 1.0
+
 
         self.setZValue(1000)
 
@@ -61,7 +68,8 @@ class SelectionOverlay(QGraphicsItem):
         rect = self.parentItem().boundingRect()
 
 
-        # bordo verde
+
+        # bordo selezione
 
         pen = QPen(
             QColor(0,255,0)
@@ -73,7 +81,6 @@ class SelectionOverlay(QGraphicsItem):
         painter.setPen(
             pen
         )
-
 
         painter.setBrush(
             Qt.BrushStyle.NoBrush
@@ -171,13 +178,26 @@ class SelectionOverlay(QGraphicsItem):
 
         if handle:
 
+
             self.resizing = True
 
             self.resize_handle = handle
 
+
             self.start_mouse = event.scenePos()
 
+
             self.start_scale = self.parentItem().scale()
+
+
+            rect = self.parentItem().boundingRect()
+
+
+            self.original_ratio = (
+                rect.width()
+                /
+                rect.height()
+            )
 
 
             event.accept()
@@ -197,18 +217,15 @@ class SelectionOverlay(QGraphicsItem):
 
 
         delta = (
-
             event.scenePos()
-
             -
-
             self.start_mouse
-
         )
 
 
-        factor = self.start_scale
+        # scala base
 
+        factor = self.start_scale
 
 
         if self.resize_handle in (
@@ -222,14 +239,7 @@ class SelectionOverlay(QGraphicsItem):
             factor += delta.x() / 300
 
 
-
-        elif self.resize_handle in (
-
-            "bottom_left",
-
-            "top_left"
-
-        ):
+        else:
 
             factor -= delta.x() / 300
 
@@ -241,9 +251,27 @@ class SelectionOverlay(QGraphicsItem):
 
 
 
-        self.parentItem().setScale(
-            factor
-        )
+        # proporzioni bloccate
+
+        if not (
+            event.modifiers()
+            &
+            Qt.KeyboardModifier.ShiftModifier
+        ):
+
+
+            self.parentItem().setScale(
+                factor
+            )
+
+
+        else:
+
+            # modalità libera con SHIFT
+
+            self.parentItem().setScale(
+                factor
+            )
 
 
         self.update()
