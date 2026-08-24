@@ -1,8 +1,7 @@
 """
 LC Stencil Studio
 Canvas Widget
-Sprint 011
-Release 0.6.3 F.3.3
+Release 0.6.7
 """
 
 from PySide6.QtWidgets import (
