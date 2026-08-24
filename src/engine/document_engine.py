@@ -47,6 +47,7 @@ class DocumentEngine:
         if path.suffix.lower() != ".lcs":
             path = path.with_suffix(".lcs")
         self.project.file_path = str(path)
+        self.project.name = path.stem
         self.project.image_path = image_path or self.project.image_path
         self.project.image_geometry = image_geometry or self.project.image_geometry or {}
         data = {
@@ -85,7 +86,7 @@ class DocumentEngine:
                 thickness=float(mdata.get("thickness", 0.0)),
                 color=mdata.get("color", "white"),
             )
-            project = Project(name=pdata["name"], material=material)
+            project = Project(name=path.stem, material=material)
             project.id = pdata.get("id", project.id)
             project.file_path = str(path)
             project.image_path = pdata.get("image_path", "")
