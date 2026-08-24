@@ -2,12 +2,12 @@
 LC Stencil Studio
 Selection Overlay
 Release 0.6.7
-Four-corner proportional resize
+Four-corner resize: proportional by default, free with SHIFT
 """
 
 from PySide6.QtWidgets import QGraphicsItem
 from PySide6.QtCore import QRectF, Qt, QPointF
-from PySide6.QtGui import QPen, QBrush, QColor
+from PySide6.QtGui import QPen, QBrush, QColor, QTransform
 
 
 class SelectionOverlay(QGraphicsItem):
@@ -20,7 +20,10 @@ class SelectionOverlay(QGraphicsItem):
         self.resizing = False
         self.resize_handle = None
         self.start_mouse = QPointF()
-        self.start_scale = 1.0
+        self.start_transform = QTransform()
+        self.start_scale_x = 1.0
+        self.start_scale_y = 1.0
+        self.start_vector = QPointF(1.0, 1.0)
         self.start_distance = 1.0
         self.anchor_local = QPointF()
         self.anchor_scene = QPointF()
@@ -107,14 +110,15 @@ class SelectionOverlay(QGraphicsItem):
         self.resizing = True
         self.resize_handle = handle
         self.start_mouse = event.scenePos()
-        self.start_scale = max(parent.scale(), 0.001)
+        self.start_transform = QTransform(parent.transform())
+        self.start_scale_x = max(abs(self.start_transform.m11()), 0.001)
+        self.start_scale_y = max(abs(self.start_transform.m22()), 0.001)
 
         self.anchor_local = self._opposite_corner(handle)
         self.anchor_scene = parent.mapToScene(self.anchor_local)
-
-        start_vector = self.start_mouse - self.anchor_scene
+        self.start_vector = self.start_mouse - self.anchor_scene
         self.start_distance = max(
-            (start_vector.x() ** 2 + start_vector.y() ** 2) ** 0.5,
+            (self.start_vector.x() ** 2 + self.start_vector.y() ** 2) ** 0.5,
             1.0,
         )
 
@@ -127,18 +131,40 @@ class SelectionOverlay(QGraphicsItem):
 
         parent = self.parentItem()
         current_vector = event.scenePos() - self.anchor_scene
-        current_distance = (
-            current_vector.x() ** 2 + current_vector.y() ** 2
-        ) ** 0.5
+        shift_free = bool(
+            event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
 
-        factor = self.start_scale * (current_distance / self.start_distance)
-        factor = max(factor, 0.05)
+        if shift_free:
+            # Free resize: X and Y change independently.
+            sx_ratio = (
+                current_vector.x() / self.start_vector.x()
+                if abs(self.start_vector.x()) > 0.001
+                else 1.0
+            )
+            sy_ratio = (
+                current_vector.y() / self.start_vector.y()
+                if abs(self.start_vector.y()) > 0.001
+                else 1.0
+            )
 
-        # Default resize is proportional. SHIFT free resize is implemented
-        # in the next 0.6.7 foundation step.
-        parent.setScale(factor)
+            scale_x = max(self.start_scale_x * sx_ratio, 0.05)
+            scale_y = max(self.start_scale_y * sy_ratio, 0.05)
 
-        # Keep the opposite corner fixed while dragging any of the 4 handles.
+        else:
+            # Default CAD resize: keep original proportions locked.
+            current_distance = (
+                current_vector.x() ** 2 + current_vector.y() ** 2
+            ) ** 0.5
+            ratio = max(current_distance / self.start_distance, 0.05)
+            scale_x = self.start_scale_x * ratio
+            scale_y = self.start_scale_y * ratio
+
+        transform = QTransform()
+        transform.scale(scale_x, scale_y)
+        parent.setTransform(transform)
+
+        # Keep the opposite corner fixed for both resize modes.
         new_anchor_scene = parent.mapToScene(self.anchor_local)
         correction = self.anchor_scene - new_anchor_scene
         parent.setPos(parent.pos() + correction)
