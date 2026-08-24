@@ -1,0 +1,1 @@
+LC Stencil Studio 0.8.0 — stable checkpoint locked before remediation work.
