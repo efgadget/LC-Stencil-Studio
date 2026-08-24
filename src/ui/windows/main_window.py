@@ -1,7 +1,7 @@
 """
 LC Stencil Studio
 Main Window
-Release 0.6.1
+Release 0.6.7
 """
 
 from PySide6.QtWidgets import (
