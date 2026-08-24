@@ -40,7 +40,7 @@ class DocumentEngine:
         if self.project is not None:
             self.project.modified = value
 
-    def save_project(self, filename, image_path="", image_geometry=None):
+    def save_project(self, filename, image_path=None, image_geometry=None):
         if self.project is None:
             return False
         path = Path(filename)
@@ -48,8 +48,12 @@ class DocumentEngine:
             path = path.with_suffix(".lcs")
         self.project.file_path = str(path)
         self.project.name = path.stem
-        self.project.image_path = image_path or self.project.image_path
-        self.project.image_geometry = image_geometry or self.project.image_geometry or {}
+        if image_path is not None:
+            self.project.image_path = image_path
+        if image_geometry is not None:
+            self.project.image_geometry = image_geometry
+        elif self.project.image_geometry is None:
+            self.project.image_geometry = {}
         data = {
             "format": "LC-Stencil-Studio",
             "version": self.FORMAT_VERSION,
