@@ -6,7 +6,7 @@ Release 0.7.0
 
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtGui import QPainter, QBrush, QColor, QTransform
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import Qt, QPoint, Signal
 
 from core.viewport import Viewport
 from engine.canvas_engine import CanvasEngine
@@ -15,6 +15,8 @@ from ui.widgets.selection_overlay import SelectionOverlay
 
 
 class Canvas(QGraphicsView):
+
+    geometryChanged = Signal()
 
     def __init__(self, project):
         super().__init__()
@@ -115,6 +117,7 @@ class Canvas(QGraphicsView):
         if self.selection_overlay:
             self.selection_overlay.update()
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def center_selected(self):
@@ -126,6 +129,7 @@ class Canvas(QGraphicsView):
         delta = material_rect.center() - item_rect.center()
         item.setPos(item.pos() + delta)
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def reset_selected_transform(self):
@@ -138,6 +142,7 @@ class Canvas(QGraphicsView):
         if self.selection_overlay:
             self.selection_overlay.update()
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def delete_selected(self):
@@ -153,6 +158,7 @@ class Canvas(QGraphicsView):
             self.image_engine.image_item = None
         self.current_selected_item = None
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def duplicate_selected(self):
@@ -171,6 +177,7 @@ class Canvas(QGraphicsView):
         self.current_selected_item = None
         self.update_selection()
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def fit_selected_to_material(self):
@@ -191,6 +198,7 @@ class Canvas(QGraphicsView):
         if self.selection_overlay:
             self.selection_overlay.update()
         self.project.modified = True
+        self.geometryChanged.emit()
         return True
 
     def mousePressEvent(self, event):
@@ -212,6 +220,9 @@ class Canvas(QGraphicsView):
             event.accept()
             return
         super().mouseMoveEvent(event)
+        if self.selected_item() is not None:
+            self.project.modified = True
+            self.geometryChanged.emit()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.MiddleButton:
@@ -220,6 +231,8 @@ class Canvas(QGraphicsView):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        if self.selected_item() is not None:
+            self.geometryChanged.emit()
 
     def wheelEvent(self, event):
         old_zoom = self.viewport_state.zoom
@@ -243,4 +256,5 @@ class Canvas(QGraphicsView):
             self.image_engine.image_item.setSelected(True)
             self.update_selection()
             self.project.modified = True
+            self.geometryChanged.emit()
         return result
