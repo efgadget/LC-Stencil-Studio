@@ -1,0 +1,1 @@
+Checkpoint 0.8.0 congelato dopo hard-control. Da questo punto le correzioni devono essere eseguite su un branch di lavoro separato.
