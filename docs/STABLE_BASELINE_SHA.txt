@@ -1,0 +1,4 @@
+LC Stencil Studio 0.8.0 stable baseline
+Branch: feature/0.8.0-projects
+Checkpoint marker commit: ebccd40fb7a5a25ea5524d7b78e43e4c9bbe7afe
+Hard-control documentation commit: 8b00cb40920601177b80c9c0ba5a80b42c4f9d1e
