@@ -1,0 +1,1 @@
+Final stable checkpoint commit parent chain ends at this marker preparation. Create immutable branch from the commit containing this file.
