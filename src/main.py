@@ -6,11 +6,14 @@ from ui.windows.main_window import MainWindow
 from ui.dialogs.new_project_dialog import NewProjectDialog
 
 
+APP_VERSION = "0.6.7"
+
+
 def main():
 
     print("=" * 40)
     print("LC STENCIL STUDIO")
-    print("Versione 0.4.0")
+    print(f"Versione {APP_VERSION}")
     print("=" * 40)
 
     app = QApplication(sys.argv)
