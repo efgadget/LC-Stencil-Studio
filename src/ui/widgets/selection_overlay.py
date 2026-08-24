@@ -15,8 +15,8 @@ class SelectionOverlay(QGraphicsItem):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.handle_size = 10
-        self.handle_hit_size = 18
+        self.handle_size = 12
+        self.handle_hit_size = 22
         self.resizing = False
         self.resize_handle = None
         self.start_mouse = QPointF()
@@ -34,19 +34,16 @@ class SelectionOverlay(QGraphicsItem):
     def boundingRect(self):
         if self.parentItem() is None:
             return QRectF()
-
-        margin = max(20, self.handle_hit_size)
-        return self.parentItem().boundingRect().adjusted(
-            -margin, -margin, margin, margin
-        )
+        return self.parentItem().boundingRect()
 
     def _handles(self):
         rect = self.parentItem().boundingRect()
+        inset = self.handle_size / 2 + 1
         return {
-            "top_left": rect.topLeft(),
-            "top_right": rect.topRight(),
-            "bottom_left": rect.bottomLeft(),
-            "bottom_right": rect.bottomRight(),
+            "top_left": QPointF(rect.left() + inset, rect.top() + inset),
+            "top_right": QPointF(rect.right() - inset, rect.top() + inset),
+            "bottom_left": QPointF(rect.left() + inset, rect.bottom() - inset),
+            "bottom_right": QPointF(rect.right() - inset, rect.bottom() - inset),
         }
 
     def _opposite_corner(self, handle):
@@ -63,45 +60,38 @@ class SelectionOverlay(QGraphicsItem):
             return
 
         rect = self.parentItem().boundingRect()
-
         pen = QPen(QColor(0, 255, 0))
         pen.setWidth(2)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(rect)
+        painter.drawRect(rect.adjusted(1, 1, -1, -1))
 
         painter.setPen(QPen(QColor(0, 0, 0)))
         painter.setBrush(QBrush(QColor(255, 255, 255)))
 
         size = self.handle_size
         for point in self._handles().values():
-            painter.drawRect(
-                QRectF(
-                    point.x() - size / 2,
-                    point.y() - size / 2,
-                    size,
-                    size,
-                )
-            )
+            painter.drawRect(QRectF(
+                point.x() - size / 2,
+                point.y() - size / 2,
+                size,
+                size,
+            ))
 
     def get_handle(self, pos):
         half = self.handle_hit_size / 2
-
         for name, point in self._handles().items():
-            hit_rect = QRectF(
+            if QRectF(
                 point.x() - half,
                 point.y() - half,
                 self.handle_hit_size,
                 self.handle_hit_size,
-            )
-            if hit_rect.contains(pos):
+            ).contains(pos):
                 return name
-
         return None
 
     def mousePressEvent(self, event):
         handle = self.get_handle(event.pos())
-
         if not handle:
             event.ignore()
             return
@@ -113,7 +103,6 @@ class SelectionOverlay(QGraphicsItem):
         self.start_transform = QTransform(parent.transform())
         self.start_scale_x = max(abs(self.start_transform.m11()), 0.001)
         self.start_scale_y = max(abs(self.start_transform.m22()), 0.001)
-
         self.anchor_local = self._opposite_corner(handle)
         self.anchor_scene = parent.mapToScene(self.anchor_local)
         self.start_vector = self.start_mouse - self.anchor_scene
@@ -121,7 +110,6 @@ class SelectionOverlay(QGraphicsItem):
             (self.start_vector.x() ** 2 + self.start_vector.y() ** 2) ** 0.5,
             1.0,
         )
-
         event.accept()
 
     def mouseMoveEvent(self, event):
@@ -131,28 +119,20 @@ class SelectionOverlay(QGraphicsItem):
 
         parent = self.parentItem()
         current_vector = event.scenePos() - self.anchor_scene
-        shift_free = bool(
-            event.modifiers() & Qt.KeyboardModifier.ShiftModifier
-        )
+        shift_free = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
 
         if shift_free:
-            # Free resize: X and Y change independently.
             sx_ratio = (
                 current_vector.x() / self.start_vector.x()
-                if abs(self.start_vector.x()) > 0.001
-                else 1.0
+                if abs(self.start_vector.x()) > 0.001 else 1.0
             )
             sy_ratio = (
                 current_vector.y() / self.start_vector.y()
-                if abs(self.start_vector.y()) > 0.001
-                else 1.0
+                if abs(self.start_vector.y()) > 0.001 else 1.0
             )
-
             scale_x = max(self.start_scale_x * sx_ratio, 0.05)
             scale_y = max(self.start_scale_y * sy_ratio, 0.05)
-
         else:
-            # Default CAD resize: keep original proportions locked.
             current_distance = (
                 current_vector.x() ** 2 + current_vector.y() ** 2
             ) ** 0.5
@@ -164,7 +144,6 @@ class SelectionOverlay(QGraphicsItem):
         transform.scale(scale_x, scale_y)
         parent.setTransform(transform)
 
-        # Keep the opposite corner fixed for both resize modes.
         new_anchor_scene = parent.mapToScene(self.anchor_local)
         correction = self.anchor_scene - new_anchor_scene
         parent.setPos(parent.pos() + correction)
@@ -178,7 +157,6 @@ class SelectionOverlay(QGraphicsItem):
             self.resize_handle = None
             event.accept()
             return
-
         event.ignore()
 
     def update_position(self):
