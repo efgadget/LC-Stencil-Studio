@@ -133,6 +133,7 @@ class MainWindow(QMainWindow):
         left.setMaximumWidth(220)
         self.canvas = Canvas(self.project)
         self.canvas.scene.selectionChanged.connect(self.refresh_properties)
+        self.canvas.geometryChanged.connect(self.refresh_properties)
 
         right_container = QWidget()
         right_container.setMaximumWidth(300)
