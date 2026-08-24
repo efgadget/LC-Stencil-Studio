@@ -80,7 +80,30 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(fit_sel_action)
         menubar.addMenu("Aiuto")
 
+    def _confirm_discard_changes(self):
+        if not self.project or not self.project.modified:
+            return True
+        box = QMessageBox(self)
+        box.setWindowTitle("LC Stencil Studio")
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setText("Il progetto contiene modifiche non salvate.")
+        box.setInformativeText("Vuoi salvare le modifiche prima di continuare?")
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Save |
+            QMessageBox.StandardButton.Discard |
+            QMessageBox.StandardButton.Cancel
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.Save)
+        result = box.exec()
+        if result == QMessageBox.StandardButton.Save:
+            return bool(self.save_project())
+        if result == QMessageBox.StandardButton.Discard:
+            return True
+        return False
+
     def new_project(self):
+        if not self._confirm_discard_changes():
+            return
         dialog = NewProjectDialog()
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
@@ -92,6 +115,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Nuovo progetto creato", 3000)
 
     def open_project(self):
+        if not self._confirm_discard_changes():
+            return
         filename, _ = QFileDialog.getOpenFileName(self, "Apri progetto", "", "LC Stencil Studio (*.lcs)")
         if not filename:
             return
@@ -136,6 +161,12 @@ class MainWindow(QMainWindow):
             return True
         QMessageBox.warning(self, "LC Stencil Studio", "Impossibile salvare il progetto.")
         return False
+
+    def closeEvent(self, event):
+        if self._confirm_discard_changes():
+            event.accept()
+        else:
+            event.ignore()
 
     def import_image(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Importa immagine", "", "Immagini (*.png *.jpg *.jpeg *.bmp)")
