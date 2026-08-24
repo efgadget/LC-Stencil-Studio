@@ -125,6 +125,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "LC Stencil Studio", "Impossibile aprire il progetto.")
             return
         self.project = project
+        self.document.set_project(project)
         self.canvas.reset_for_project(project)
         if project.image_path:
             if self.canvas.import_image(project.image_path):
@@ -156,6 +157,10 @@ class MainWindow(QMainWindow):
         image_path = self.canvas.image_engine.image_path
         ok = self.document.save_project(filename, image_path=image_path, image_geometry=geometry)
         if ok:
+            # DocumentEngine may normalize the filename (for example adding .lcs).
+            # Keep MainWindow bound to the exact same Project instance/path so that
+            # subsequent Ctrl+S and Save-on-close overwrite instead of opening Save As.
+            self.project = self.document.get_project()
             self.setWindowTitle(f"LC Stencil Studio 0.8.0 - {self.project.name}")
             self.statusBar().showMessage("Progetto salvato", 3000)
             return True
