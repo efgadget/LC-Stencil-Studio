@@ -42,6 +42,7 @@ class Canvas(QGraphicsView):
         self.selection_overlay = None
         self.current_selected_item = None
         self.image_engine.image_item = None
+        self.image_engine.image_path = ""
         self.project = project
         self.resetTransform()
         self.viewport_state.reset()
@@ -149,13 +150,17 @@ class Canvas(QGraphicsView):
         item = self.selected_item()
         if item is None:
             return False
+        deleting_main_image = item is self.image_engine.image_item
         if self.selection_overlay:
             self.selection_overlay.setParentItem(None)
             self.scene.removeItem(self.selection_overlay)
             self.selection_overlay = None
         self.scene.removeItem(item)
-        if item is self.image_engine.image_item:
+        if deleting_main_image:
             self.image_engine.image_item = None
+            self.image_engine.image_path = ""
+            self.project.image_path = ""
+            self.project.image_geometry = {}
         self.current_selected_item = None
         self.project.modified = True
         self.geometryChanged.emit()
