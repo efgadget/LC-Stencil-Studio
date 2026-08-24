@@ -1,7 +1,7 @@
 """
 LC Stencil Studio
 Image Engine
-Release 0.6.1
+Release 0.6.7
 """
 
 from PySide6.QtGui import QPixmap
