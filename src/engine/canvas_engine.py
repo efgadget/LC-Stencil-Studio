@@ -1,7 +1,7 @@
 """
 LC Stencil Studio
 Canvas Engine
-Versione 0.2.0
+Release 0.6.7
 """
 
 from PySide6.QtWidgets import QGraphicsRectItem
