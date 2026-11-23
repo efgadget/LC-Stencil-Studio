@@ -110,7 +110,7 @@ class ImageEngine:
         return True
 
 
-    def preview_bridges(self, image_width_mm, bridge_width_mm):
+    def preview_bridges(self, image_width_mm, bridge_width_mm, orientation="horizontal"):
         """Build bridges from the original source using current threshold."""
         if not self.has_image() or self.original_pixmap is None:
             raise ValueError("Nessuna immagine importata")
@@ -128,6 +128,6 @@ class ImageEngine:
                 value = 0 if qGray(source.pixel(x, y)) < self.threshold else 255
                 source.setPixel(x, y, qRgb(value, value, value))
         bridge_px = max(1, round(bridge_width_mm * width / image_width_mm))
-        result, count = add_island_bridges(source, bridge_px)
+        result, count = add_island_bridges(source, bridge_px, orientation)
         self.image_item.setPixmap(QPixmap.fromImage(result))
         return count

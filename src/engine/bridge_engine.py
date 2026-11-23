@@ -4,7 +4,7 @@ from PySide6.QtGui import QImage, QPainter, QPen, QColor
 from PySide6.QtCore import Qt
 
 
-def add_island_bridges(source, bridge_pixels):
+def add_island_bridges(source, bridge_pixels, orientation="horizontal"):
     """Connect enclosed white regions to edge-connected white background.
 
     Uses four-connected white components and straight horizontal/vertical
@@ -18,6 +18,8 @@ def add_island_bridges(source, bridge_pixels):
     if width * height > 2_000_000:
         raise ValueError("Immagine troppo grande (massimo 2 milioni di pixel)")
     bridge_pixels = max(1, int(bridge_pixels))
+    if orientation not in ("horizontal", "vertical", "shortest"):
+        raise ValueError("Orientamento ponticelli non valido")
     white = bytearray(width * height)
     for y in range(height):
         for x in range(width):
@@ -54,6 +56,30 @@ def add_island_bridges(source, bridge_pixels):
     if not exterior:
         return image, 0
 
+    # Keep a full bridge stroke inside the raster, and avoid cutting
+    # through a second white island. Horizontal mode favors side exits
+    # for lettering inside a black nameplate.
+    half_width = (bridge_pixels + 1) // 2
+
+    def stroke_is_safe(x1, y1, x2, y2, label):
+        if x1 == x2:
+            if x1 - half_width < 0 or x1 + half_width >= width:
+                return False
+            for yy in range(min(y1, y2), max(y1, y2) + 1):
+                for xx in range(x1 - half_width, x1 + half_width + 1):
+                    other = labels[yy * width + xx]
+                    if other != -1 and other != label and other not in exterior:
+                        return False
+        else:
+            if y1 - half_width < 0 or y1 + half_width >= height:
+                return False
+            for xx in range(min(x1, x2), max(x1, x2) + 1):
+                for yy in range(y1 - half_width, y1 + half_width + 1):
+                    other = labels[yy * width + xx]
+                    if other != -1 and other != label and other not in exterior:
+                        return False
+        return True
+
     painter = QPainter(image)
     pen = QPen(QColor("white"), bridge_pixels, Qt.PenStyle.SolidLine,
                Qt.PenCapStyle.FlatCap)
@@ -66,6 +92,8 @@ def add_island_bridges(source, bridge_pixels):
             best = None
             # Search straight paths from the island boundary toward
             # the existing exterior white background.
+            # Sample component boundary only, not every interior pixel.
+            # Stable middle-out scan reduces corner attachments.
             for pos in pixels:
                 x, y = pos % width, pos // width
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -75,8 +103,14 @@ def add_island_bridges(source, bridge_pixels):
                         if other == label:
                             break
                         if other in exterior:
-                            if best is None or distance < best[0]:
-                                best = (distance, x, y, xx, yy)
+                            if stroke_is_safe(x, y, xx, yy, label):
+                                horizontal = dy == 0
+                                penalty = (3 if orientation == "horizontal" and not horizontal
+                                           else 3 if orientation == "vertical" and horizontal
+                                           else 1)
+                                score = distance * penalty
+                                if best is None or score < best[0]:
+                                    best = (score, x, y, xx, yy)
                             break
                         if other != -1:
                             break

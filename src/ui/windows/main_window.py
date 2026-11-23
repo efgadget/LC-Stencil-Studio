@@ -162,8 +162,21 @@ class MainWindow(QMainWindow):
         )
         if not ok:
             return
+        direction, ok = QInputDialog.getItem(
+            self, "Posizionamento ponticelli",
+            "Preferenza di posizionamento:",
+            ["Orizzontale (consigliato per scritte)",
+             "Verticale", "Percorso più corto"], 0, False
+        )
+        if not ok:
+            return
+        orientation = {
+            "Orizzontale (consigliato per scritte)": "horizontal",
+            "Verticale": "vertical",
+            "Percorso più corto": "shortest"
+        }[direction]
         try:
-            count = engine.preview_bridges(image_width_mm, bridge_mm)
+            count = engine.preview_bridges(image_width_mm, bridge_mm, orientation)
         except ValueError as exc:
             QMessageBox.warning(self, "Ponticelli", str(exc))
             return
