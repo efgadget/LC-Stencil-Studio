@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QToolBar,
     QStatusBar,
-    QFileDialog
+    QFileDialog,
+    QInputDialog,
+    QMessageBox
 )
 
 from PySide6.QtGui import QAction
@@ -59,7 +61,14 @@ class MainWindow(QMainWindow):
 
         menubar.addMenu("Modifica")
         menubar.addMenu("Visualizza")
-        menubar.addMenu("Stencil")
+        stencil_menu = menubar.addMenu("Stencil")
+        action_threshold = QAction("Converti in bianco e nero...", self)
+        action_threshold.triggered.connect(self.convert_to_stencil_preview)
+        stencil_menu.addAction(action_threshold)
+
+        action_restore = QAction("Ripristina immagine originale", self)
+        action_restore.triggered.connect(self.restore_original_image)
+        stencil_menu.addAction(action_restore)
         menubar.addMenu("Materiali")
         menubar.addMenu("Strumenti")
         menubar.addMenu("Aiuto")
@@ -107,6 +116,29 @@ class MainWindow(QMainWindow):
                 "Errore importazione immagine",
                 3000
             )
+
+    def convert_to_stencil_preview(self):
+        if not self.canvas.image_engine.has_image():
+            QMessageBox.information(self, "Stencil", "Importa prima un'immagine dal menu File.")
+            return
+
+        value, accepted = QInputDialog.getInt(
+            self, "Conversione bianco e nero",
+            "Soglia (0-255): valori più alti includono più grigi nel nero.",
+            self.canvas.image_engine.threshold, 0, 255, 1
+        )
+        if not accepted:
+            return
+        if self.canvas.image_engine.apply_threshold(value):
+            self.statusBar().showMessage(f"Anteprima bianco/nero - soglia {value}", 5000)
+        else:
+            QMessageBox.warning(self, "Stencil", "Impossibile convertire l'immagine.")
+
+    def restore_original_image(self):
+        if self.canvas.image_engine.restore_original():
+            self.statusBar().showMessage("Immagine originale ripristinata", 3000)
+        else:
+            QMessageBox.information(self, "Stencil", "Non è presente un'immagine da ripristinare.")
 
     def create_toolbar(self):
         toolbar = QToolBar("Toolbar")

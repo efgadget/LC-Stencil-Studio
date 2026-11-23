@@ -72,6 +72,7 @@ class Canvas(QGraphicsView):
         self.selection_overlay = None
         self.current_selected_item = None
         self.image_engine.image_item = None
+        self.image_engine.original_pixmap = None
 
         self.project = project
 
