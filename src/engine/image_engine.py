@@ -8,6 +8,7 @@ from PySide6.QtGui import QPixmap, QImage, qRgb, qGray
 from PySide6.QtCore import Qt
 
 from ui.widgets.resize_pixmap_item import ResizablePixmapItem
+from engine.bridge_engine import add_island_bridges
 
 
 class ImageEngine:
@@ -107,3 +108,26 @@ class ImageEngine:
             return False
         self.image_item.setPixmap(self.original_pixmap)
         return True
+
+
+    def preview_bridges(self, image_width_mm, bridge_width_mm):
+        """Build bridges from the original source using current threshold."""
+        if not self.has_image() or self.original_pixmap is None:
+            raise ValueError("Nessuna immagine importata")
+        source = self.original_pixmap.toImage().convertToFormat(
+            QImage.Format.Format_RGB32
+        )
+        width = source.width()
+        if width == 0 or image_width_mm <= 0:
+            raise ValueError("Dimensioni immagine non valide")
+        if source.width() * source.height() > 2_000_000:
+            raise ValueError("Immagine troppo grande: massimo 2 milioni di pixel")
+        # Rebuild the binary mask from the original, avoiding cumulative edits.
+        for y in range(source.height()):
+            for x in range(source.width()):
+                value = 0 if qGray(source.pixel(x, y)) < self.threshold else 255
+                source.setPixel(x, y, qRgb(value, value, value))
+        bridge_px = max(1, round(bridge_width_mm * width / image_width_mm))
+        result, count = add_island_bridges(source, bridge_px)
+        self.image_item.setPixmap(QPixmap.fromImage(result))
+        return count

@@ -69,6 +69,11 @@ class MainWindow(QMainWindow):
         action_restore = QAction("Ripristina immagine originale", self)
         action_restore.triggered.connect(self.restore_original_image)
         stencil_menu.addAction(action_restore)
+
+        stencil_menu.addSeparator()
+        action_bridges = QAction("Anteprima ponticelli automatici...", self)
+        action_bridges.triggered.connect(self.preview_auto_bridges)
+        stencil_menu.addAction(action_bridges)
         menubar.addMenu("Materiali")
         menubar.addMenu("Strumenti")
         menubar.addMenu("Aiuto")
@@ -139,6 +144,38 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Immagine originale ripristinata", 3000)
         else:
             QMessageBox.information(self, "Stencil", "Non è presente un'immagine da ripristinare.")
+
+    def preview_auto_bridges(self):
+        engine = self.canvas.image_engine
+        if not engine.has_image():
+            QMessageBox.information(self, "Ponticelli", "Importa prima un'immagine.")
+            return
+        image_width_mm, ok = QInputDialog.getDouble(
+            self, "Larghezza del logo", "Larghezza finale del logo (mm):",
+            100.0, 1.0, 5000.0, 1
+        )
+        if not ok:
+            return
+        bridge_mm, ok = QInputDialog.getDouble(
+            self, "Ponticelli automatici", "Larghezza ponticello (mm):",
+            1.5, 0.1, 50.0, 2
+        )
+        if not ok:
+            return
+        try:
+            count = engine.preview_bridges(image_width_mm, bridge_mm)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Ponticelli", str(exc))
+            return
+        self.statusBar().showMessage(
+            f"Anteprima: {count} ponticelli automatici. Verificare prima del taglio.",
+            8000
+        )
+        QMessageBox.information(
+            self, "Anteprima ponticelli",
+            f"Creati {count} ponticelli. Questa è un'anteprima raster, "
+            "NON un file pronto per il laser. Controlla ogni lettera."
+        )
 
     def create_toolbar(self):
         toolbar = QToolBar("Toolbar")
